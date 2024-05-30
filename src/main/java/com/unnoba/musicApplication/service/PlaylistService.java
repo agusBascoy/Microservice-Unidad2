@@ -2,11 +2,15 @@ package com.unnoba.musicApplication.service;
 
 import com.unnoba.musicApplication.dto.PlaylistDTO;
 import com.unnoba.musicApplication.dto.SongDTO;
+import com.unnoba.musicApplication.exception.UserMismatchException;
+import com.unnoba.musicApplication.exception.UserNotFoundException;
 import com.unnoba.musicApplication.exception.PlaylistNotFoundException;
 import com.unnoba.musicApplication.exception.SongNotFoundException;
 import com.unnoba.musicApplication.model.Playlist;
 import com.unnoba.musicApplication.model.Song;
+import com.unnoba.musicApplication.model.auth.User;
 import com.unnoba.musicApplication.repository.PlaylistRepository;
+import com.unnoba.musicApplication.service.auth.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +27,9 @@ public class PlaylistService {
     @Autowired
     private SongService songService;
 
+    @Autowired
+    private UserService userService;
+
     public List<PlaylistDTO> getAllPlaylists() {
         return convertToDTO(playlistRepository.findAll());
     }
@@ -35,18 +42,33 @@ public class PlaylistService {
         return new PlaylistDTO(playlist.getName(), songService.convertToDTO(playlist.getSongs()));
     }
 
-    public PlaylistDTO createPlaylist(PlaylistDTO playlistDTO) {
+    public PlaylistDTO createPlaylist(PlaylistDTO playlistDTO, String email) {
         Playlist playlist = new Playlist();
         playlist.setName(playlistDTO.getName());
         playlist.setSongs(Collections.emptyList());
+        playlist.setUser(findUserByEmail(email));
         return convertToDTO(playlistRepository.save(playlist));
     }
 
-    public PlaylistDTO addSongToPlaylist(Long id, Long songId) {
+
+    private User findUserByEmail(String email) {
+        User user = userService.find(email);
+        if (user == null)
+            throw new UserNotFoundException(String.format("User not found with email: %s",  email));
+        return user;
+    }
+
+    public PlaylistDTO addSongToPlaylist(Long id, Long songId, String email) {
         Playlist playlist = playlistRepository.findById(id).orElse(null);
         if (playlist == null)
             throw new PlaylistNotFoundException(String.format("Playlist not found with id: %s",  id));
 
+        User user = findUserByEmail(email);
+        if (playlist.getUser() != null && !playlist.getUser().getId().equals(user.getId()))
+            throw new UserMismatchException("Current user is not the owner of the playlist");
+        if (playlist.getUser() == null) {
+            playlist.setUser(user);
+        }
         Song song = songService.findSongEntityById(songId);
         if (song == null)
             throw new SongNotFoundException(String.format("Song not found with id: %s",  songId));
@@ -54,11 +76,17 @@ public class PlaylistService {
         return convertToDTO(playlistRepository.save(playlist));
     }
 
-    public PlaylistDTO removeSongFromPlaylist(Long id, Long songId) {
+    public PlaylistDTO removeSongFromPlaylist(Long id, Long songId, String email) {
         Playlist playlist = playlistRepository.findById(id).orElse(null);
         if (playlist == null)
             throw new PlaylistNotFoundException(String.format("Playlist not found with id: %s",  id));
 
+        User user = findUserByEmail(email);
+        if (playlist.getUser() != null && !playlist.getUser().getId().equals(user.getId()))
+            throw new UserMismatchException("Current user is not the owner of the playlist");
+        if (playlist.getUser() == null) {
+            playlist.setUser(user);
+        }
         Song song = songService.findSongEntityById(songId);
         if (song == null)
             throw new SongNotFoundException(String.format("Song not found with id: %s",  songId));
@@ -66,10 +94,18 @@ public class PlaylistService {
         return convertToDTO(playlistRepository.save(playlist));
     }
 
-    public PlaylistDTO updatePlaylistName(Long id, String name) {
+    public PlaylistDTO updatePlaylistName(Long id, String name, String email) {
         Playlist playlist = playlistRepository.findById(id).orElse(null);
         if (playlist == null)
             throw new PlaylistNotFoundException(String.format("Playlist not found with id: %s",  id));
+
+        User user = findUserByEmail(email);
+        if (playlist.getUser() != null && !playlist.getUser().getId().equals(user.getId()))
+            throw new UserMismatchException("Current user is not the owner of the playlist");
+        if (playlist.getUser() == null) {
+            playlist.setUser(user);
+        }
+
         playlist.setName(name);
         return convertToDTO(playlistRepository.save(playlist));
     }
@@ -81,11 +117,18 @@ public class PlaylistService {
         return songService.convertToDTO(playlist.getSongs());
     }
 
-    //Delete playlist by id returning playlistDTO removed, and check if playlist exists with the id sent
-    public PlaylistDTO deletePlaylist(Long id) {
+    public PlaylistDTO deletePlaylist(Long id, String email) {
         Playlist playlist = playlistRepository.findById(id).orElse(null);
         if (playlist == null)
             throw new PlaylistNotFoundException(String.format("Playlist not found with id: %s",  id));
+
+        User user = findUserByEmail(email);
+        if (playlist.getUser() != null && !playlist.getUser().getId().equals(user.getId()))
+            throw new UserMismatchException("Current user is not the owner of the playlist");
+        if (playlist.getUser() == null) {
+            playlist.setUser(user);
+        }
+
         playlistRepository.deleteById(id);
         return convertToDTO(playlist);
     }

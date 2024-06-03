@@ -16,6 +16,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,6 +27,7 @@ import java.util.Date;
 @Slf4j
 @RestController
 @RequestMapping("/auth")
+@CrossOrigin
 public class AuthenticationResource {
 
     @Autowired
@@ -35,7 +37,7 @@ public class AuthenticationResource {
     private UserService userService;
 
     @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public String auth(@RequestBody UserDTO userDTO,  HttpServletResponse response) {
+    public ResponseEntity<String> auth(@RequestBody UserDTO userDTO,  HttpServletResponse response) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userDTO.getEmail(), userDTO.getPassword())
         );
@@ -48,7 +50,7 @@ public class AuthenticationResource {
 
         response.addHeader(SecurityConstants.HEADER_STRING, SecurityConstants.TOKEN_PREFIX + token);
 
-        return token;
+        return ResponseEntity.ok(token);
     }
 
     @PostMapping("/register")

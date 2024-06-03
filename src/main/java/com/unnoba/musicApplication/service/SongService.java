@@ -1,6 +1,7 @@
 package com.unnoba.musicApplication.service;
 
 import com.unnoba.musicApplication.dto.SongDTO;
+import com.unnoba.musicApplication.model.Genre;
 import com.unnoba.musicApplication.model.Song;
 import com.unnoba.musicApplication.repository.SongRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,16 @@ public class SongService {
     private SongRepository songRepository;
 
     public List<SongDTO> getAllSongs() {
+        return convertToDTO(songRepository.findAll());
+    }
+
+    public List<SongDTO> getAllSongs(Genre genre, String author) {
+        if (genre != null && author != null)
+            return convertToDTO(songRepository.findByGenreAndAuthor(genre, author));
+        if (genre != null)
+            return convertToDTO(songRepository.findByGenre(genre));
+        if (author != null)
+            return convertToDTO(songRepository.findByAuthor(author));
         return convertToDTO(songRepository.findAll());
     }
 

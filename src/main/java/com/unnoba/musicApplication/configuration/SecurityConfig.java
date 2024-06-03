@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .userDetailsService(userDetailsService)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET,"/songs/all").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/song/all").permitAll()
                         .requestMatchers(HttpMethod.GET,"/playlist/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
                         .anyRequest().fullyAuthenticated())

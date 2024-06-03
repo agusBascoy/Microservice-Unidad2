@@ -34,6 +34,14 @@ public class PlaylistService {
         return convertToDTO(playlistRepository.findAll());
     }
 
+    public List<PlaylistDTO> getMyPlaylists(String email) {
+        User user = findUserByEmail(email);
+        if (user == null)
+            throw new UserNotFoundException(String.format("User not found with email: %s",  email));
+
+        return convertToDTO(playlistRepository.findByUser(user));
+    }
+
     private List<PlaylistDTO> convertToDTO(List<Playlist> playlists) {
         return playlists.stream().map(this::convertToDTO).collect(Collectors.toList());
     }

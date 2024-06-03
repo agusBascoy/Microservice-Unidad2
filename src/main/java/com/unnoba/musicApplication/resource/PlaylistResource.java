@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -27,6 +28,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/playlist")
+@CrossOrigin
 public class PlaylistResource {
 
     @Autowired
@@ -35,6 +37,15 @@ public class PlaylistResource {
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<PlaylistDTO>> getAllPlaylists() {
         return ResponseEntity.ok(playlistService.getAllPlaylists());
+    }
+
+    @RequestMapping(value = "/myPlaylists", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<PlaylistDTO>> getMyPlaylists(@RequestHeader("Authorization") String authToken) {
+        String user = JwtUtil.extractSubject(authToken);
+        if (StringUtils.isEmpty(user)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(playlistService.getMyPlaylists(user));
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE,

@@ -52,6 +52,4 @@ public class SongResource {
         }
         return ResponseEntity.ok(songService.getAllSongs(genreEnum, author));
     }
-
-
 }

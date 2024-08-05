@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: musicApplication
+  config:
+    import: optional:configserver:http://localhost:8888
+  cloud:
+    config:
+      enabled: true
+      uri: http://localhost:8888
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+server:
+  port: 8084

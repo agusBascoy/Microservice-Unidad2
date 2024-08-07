@@ -16,7 +16,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +26,6 @@ import java.util.Date;
 @Slf4j
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin
 public class AuthenticationResource {
 
     @Autowired
@@ -36,7 +34,7 @@ public class AuthenticationResource {
     @Autowired
     private UserService userService;
 
-    @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> auth(@RequestBody UserDTO userDTO,  HttpServletResponse response) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userDTO.getEmail(), userDTO.getPassword())
@@ -53,7 +51,7 @@ public class AuthenticationResource {
         return ResponseEntity.ok(token);
     }
 
-    @PostMapping("/register")
+    @PostMapping(value = "/register", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> registerUser(@RequestBody UserDTO userDTO) {
         if (userDTO.getEmail() == null || userDTO.getPassword() == null) {
             return new ResponseEntity<>("Invalid data", HttpStatus.BAD_REQUEST);

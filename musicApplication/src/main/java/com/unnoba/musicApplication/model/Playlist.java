@@ -30,7 +30,7 @@ public class Playlist {
 
     private String name;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     @JoinTable(
             name = "playlists_songs",
             joinColumns = @JoinColumn(name = "playlist_id"),
@@ -48,5 +48,12 @@ public class Playlist {
 
     public void removeSong(Song song) {
         songs.remove(song);
+        song.getPlaylists().remove(this);
+
+    }
+    public void removeAllSongs() {
+        for (Song song : new ArrayList<>(songs)) {
+            removeSong(song);
+        }
     }
 }

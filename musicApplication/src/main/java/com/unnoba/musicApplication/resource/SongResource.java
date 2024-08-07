@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -23,14 +22,13 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/song")
-@CrossOrigin
 public class SongResource {
 
     @Autowired
     private SongService songService;
 
 
-    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/create", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SongDTO> createSong(@RequestHeader("Authorization") String authToken, @RequestBody SongDTO songDTO) {
         String user = JwtUtil.extractSubject(authToken);
         if (user == null) {

@@ -16,10 +16,6 @@ public class SongService {
     @Autowired
     private SongRepository songRepository;
 
-    public List<SongDTO> getAllSongs() {
-        return convertToDTO(songRepository.findAll());
-    }
-
     public List<SongDTO> getAllSongs(Genre genre, String author) {
         if (genre != null && author != null)
             return convertToDTO(songRepository.findByGenreAndAuthor(genre, author));
@@ -35,7 +31,7 @@ public class SongService {
     }
 
     private static SongDTO convertToDTO(Song song) {
-        return new SongDTO(song.getName(), song.getAuthor(), song.getGenre());
+        return new SongDTO(song.getId(), song.getName(), song.getAuthor(), song.getGenre());
     }
 
     public Song findSongEntityById(Long id) {

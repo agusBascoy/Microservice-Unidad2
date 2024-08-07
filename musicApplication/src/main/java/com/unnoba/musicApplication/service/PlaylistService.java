@@ -11,6 +11,7 @@ import com.unnoba.musicApplication.model.Song;
 import com.unnoba.musicApplication.model.auth.User;
 import com.unnoba.musicApplication.repository.PlaylistRepository;
 import com.unnoba.musicApplication.service.auth.UserService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +48,7 @@ public class PlaylistService {
     }
 
     private PlaylistDTO convertToDTO(Playlist playlist) {
-        return new PlaylistDTO(playlist.getName(), songService.convertToDTO(playlist.getSongs()));
+        return new PlaylistDTO(playlist.getId(), playlist.getName(), songService.convertToDTO(playlist.getSongs()));
     }
 
     public PlaylistDTO createPlaylist(PlaylistDTO playlistDTO, String email) {
@@ -77,11 +78,32 @@ public class PlaylistService {
         if (playlist.getUser() == null) {
             playlist.setUser(user);
         }
+        return addSong(playlist, songId);
+    }
+
+    private PlaylistDTO addSong(Playlist playlist, Long songId) {
         Song song = songService.findSongEntityById(songId);
         if (song == null)
             throw new SongNotFoundException(String.format("Song not found with id: %s",  songId));
         playlist.addSong(song);
         return convertToDTO(playlistRepository.save(playlist));
+    }
+
+    public PlaylistDTO addSongsToPlaylist(Long id, List<Long> songIds, String email) {
+        Playlist playlist = playlistRepository.findById(id).orElse(null);
+        if (playlist == null)
+            throw new PlaylistNotFoundException(String.format("Playlist not found with id: %s",  id));
+
+        User user = findUserByEmail(email);
+        if (playlist.getUser() != null && !playlist.getUser().getId().equals(user.getId()))
+            throw new UserMismatchException("Current user is not the owner of the playlist");
+        if (playlist.getUser() == null) {
+            playlist.setUser(user);
+        }
+        for (Long songId : songIds) {
+            addSong(playlist, songId);
+        }
+        return playlistRepository.findById(id).map(this::convertToDTO).orElse(null);
     }
 
     public PlaylistDTO removeSongFromPlaylist(Long id, Long songId, String email) {
@@ -99,6 +121,26 @@ public class PlaylistService {
         if (song == null)
             throw new SongNotFoundException(String.format("Song not found with id: %s",  songId));
         playlist.removeSong(song);
+        return convertToDTO(playlistRepository.save(playlist));
+    }
+
+    public PlaylistDTO removeSongsToPlaylist(Long id, List<Long> songIds, String email) {
+        Playlist playlist = playlistRepository.findById(id).orElse(null);
+        if (playlist == null)
+            throw new PlaylistNotFoundException(String.format("Playlist not found with id: %s",  id));
+
+        User user = findUserByEmail(email);
+        if (playlist.getUser() != null && !playlist.getUser().getId().equals(user.getId()))
+            throw new UserMismatchException("Current user is not the owner of the playlist");
+        if (playlist.getUser() == null) {
+            playlist.setUser(user);
+        }
+        for (Long songId : songIds) {
+            Song song = songService.findSongEntityById(songId);
+            if (song == null)
+                throw new SongNotFoundException(String.format("Song not found with id: %s",  songId));
+            playlist.removeSong(song);
+        }
         return convertToDTO(playlistRepository.save(playlist));
     }
 
@@ -125,6 +167,7 @@ public class PlaylistService {
         return songService.convertToDTO(playlist.getSongs());
     }
 
+    @Transactional
     public PlaylistDTO deletePlaylist(Long id, String email) {
         Playlist playlist = playlistRepository.findById(id).orElse(null);
         if (playlist == null)
@@ -136,7 +179,7 @@ public class PlaylistService {
         if (playlist.getUser() == null) {
             playlist.setUser(user);
         }
-
+        playlist.removeAllSongs();
         playlistRepository.deleteById(id);
         return convertToDTO(playlist);
     }

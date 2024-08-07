@@ -8,15 +8,19 @@ spring:
     gateway:
       routes:
         - id: authentication-service
-          uri: lb://musicApplication
+          uri: lb://MUSICAPPLICATION
           predicates:
             - Path=/auth**
+        - id: registration-service
+          uri: lb://MUSICAPPLICATION
+          predicates:
+            - Path=/auth/**
         - id: song-service
-          uri: lb://musicApplication
+          uri: lb://MUSICAPPLICATION
           predicates:
             - Path=/song/**
         - id: playlist-service
-          uri: lb://musicApplication
+          uri: lb://MUSICAPPLICATION
           predicates:
             - Path=/playlist/**
 eureka:

@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -28,7 +28,6 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/playlist")
-@CrossOrigin
 public class PlaylistResource {
 
     @Autowired
@@ -49,7 +48,7 @@ public class PlaylistResource {
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE,
-            consumes = MediaType.APPLICATION_JSON_VALUE)
+            consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE})
     public ResponseEntity<PlaylistDTO> createPlaylist(@RequestHeader("Authorization") String authToken, @RequestBody PlaylistDTO playlistDTO) {
         String user = JwtUtil.extractSubject(authToken);
         if (StringUtils.isEmpty(user)) {
@@ -85,6 +84,31 @@ public class PlaylistResource {
         }
     }
 
+
+    @RequestMapping(value = "/{id}/songs",consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE}, method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PlaylistDTO> addSongsToPlaylist(@RequestHeader("Authorization") String authToken, @PathVariable Long id,
+                                                         @RequestBody List<Long> songIds) {
+        String user = JwtUtil.extractSubject(authToken);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if (CollectionUtils.isEmpty(songIds))
+            return ResponseEntity.badRequest().build();
+
+        try {
+            return ResponseEntity.ok(playlistService.addSongsToPlaylist(id, songIds, user));
+        } catch (PlaylistNotFoundException ex) {
+            return ResponseEntity.notFound().build();
+        } catch (SongNotFoundException ex) {
+            return ResponseEntity.badRequest().build();
+        } catch (UserMismatchException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
+        } catch (UserNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
     @RequestMapping(value = "/{id}/song", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PlaylistDTO> removeSongFromPlaylist(@RequestHeader("Authorization") String authToken, @PathVariable Long id,
                                                               @QueryParam("songId") Long songId) {
@@ -97,6 +121,29 @@ public class PlaylistResource {
 
         try {
             return ResponseEntity.ok(playlistService.removeSongFromPlaylist(id, songId, user));
+        } catch (PlaylistNotFoundException ex) {
+            return ResponseEntity.notFound().build();
+        } catch (SongNotFoundException ex) {
+            return ResponseEntity.badRequest().build();
+        } catch (UserMismatchException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
+        } catch (UserNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    @RequestMapping(value = "/{id}/songs", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PlaylistDTO> removeSongsFromPlaylist(@RequestHeader("Authorization") String authToken, @PathVariable Long id,
+                                                              @RequestBody List<Long> songIds) {
+        String user = JwtUtil.extractSubject(authToken);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        if (CollectionUtils.isEmpty(songIds))
+            return ResponseEntity.badRequest().build();
+
+        try {
+            return ResponseEntity.ok(playlistService.removeSongsToPlaylist(id, songIds, user));
         } catch (PlaylistNotFoundException ex) {
             return ResponseEntity.notFound().build();
         } catch (SongNotFoundException ex) {

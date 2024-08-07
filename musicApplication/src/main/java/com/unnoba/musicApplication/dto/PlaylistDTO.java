@@ -13,6 +13,8 @@ import java.util.List;
 @Builder
 public class PlaylistDTO {
 
+    private Long id;
+
     private String name;
 
     private List<SongDTO> songDTOS;

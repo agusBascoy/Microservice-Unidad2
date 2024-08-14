@@ -1,6 +1,7 @@
 package com.unnoba.musicApplication.resource;
 
 import com.unnoba.musicApplication.dto.SongDTO;
+import com.unnoba.musicApplication.exception.RepeatedSongException;
 import com.unnoba.musicApplication.model.Genre;
 import com.unnoba.musicApplication.service.SongService;
 import com.unnoba.musicApplication.util.JwtUtil;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -38,7 +40,11 @@ public class SongResource {
             return ResponseEntity.badRequest().build();
         }
 
-        return ResponseEntity.ok(songService.addSong(songDTO));
+        try {
+            return ResponseEntity.ok(songService.addSong(songDTO));
+        } catch (RepeatedSongException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
     }
 
     @RequestMapping(value = "/all", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -49,5 +55,19 @@ public class SongResource {
             genreEnum = Genre.valueOf(genre.toUpperCase());
         }
         return ResponseEntity.ok(songService.getAllSongs(genreEnum, author));
+    }
+
+    @RequestMapping(value = "/delete", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> deleteSongs(@RequestHeader("Authorization") String authToken,
+                                              @RequestBody List<Long> ids) {
+        String user = JwtUtil.extractSubject(authToken);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        if (CollectionUtils.isEmpty(ids)) {
+            return ResponseEntity.badRequest().build();
+        }
+        songService.deleteSongs(ids);
+        return ResponseEntity.ok("Song deleted");
     }
 }
